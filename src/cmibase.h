@@ -1,6 +1,8 @@
 #include<stdio.h>
 #include<stdint.h>
 
+#ifdef  _BASE_H
+#define _BASE_H
 
 #ifdef __cpluscplus
 extern "C"{
@@ -8,9 +10,8 @@ extern "C"{
 
 # define INT32_MAX  2147483547
 # define INT32_MIN (-INT32_MAX-1)
-# define M_E            2.7182818284590452354   /* e */
-# define M_PI           3.14159265358979323846  /* pi */
-
+# define M_E    2.7182818284590452354   /* e */
+# define M_PI   3.1415926535897932384  /* pi */
 
 #define cmi_abs(X)  ((X)>=0?(X):-(X))
 #define cmi_max(X,Y) ((X)>=(Y)?(X):(Y))
@@ -20,13 +21,14 @@ extern "C"{
 #define cmi_sqr(x) ((x)*(x))
 
 struct cmi_image {
+
     char *name;
     int32_t n_row;
     int32_t n_col;
     int32_t n_depth;
 
-    int32_t data_type;
-    void* data;
+    int32_t data_type;    //data storage type
+    void* data;           //pointer for raw data
 };
 
 extern void writeimage(
@@ -48,8 +50,7 @@ extern cmi_image* zeros_image_2d(
     int32_t type
 );
 
-
-
 #ifdef __cplusplus
 }
+#endif
 #endif
