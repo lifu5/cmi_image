@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "cmiutils.h"
 
-int file_size(char* filename){
+int get_filesize(char* filename){
     FILE* fp =fopen("filename", "rb");
     int size;
     if(fp == NULL){ //open files failed 
