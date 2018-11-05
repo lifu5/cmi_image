@@ -46,7 +46,7 @@ extern inline int row(struct cmi_image* f);
 extern inline int col(struct cmi_image* f);
 extern inline int depth(struct cmi_image* f);
 
-
+int pixel_num(struct cmi_image* f);
 
 struct cmi_image* allocimage(
     char* name,
@@ -63,7 +63,9 @@ struct cmi_image* allocimage2d(
         int32_t dt
 );
 
-void writeimage(
+/* write and read func */
+
+void writerawimage(
     struct cmi_image* image,
     char* filename
 );
