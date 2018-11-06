@@ -133,7 +133,6 @@ void writerawimage(struct cmi_image* image, char* filename){
     fclose(fd);
 }
 
-
 struct cmi_image* copyimage(struct cmi_image* src){
     int32_t row = src->n_row;
     int32_t col = src->n_col;

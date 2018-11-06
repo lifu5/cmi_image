@@ -31,12 +31,16 @@ extern "C"{
 #define JDOUBLE 4
 
 
+typedef struct{
+    float xx, yy;
+}point2d;
+
+
 struct cmi_image {
     char *name;
     int32_t n_row;
     int32_t n_col;
     int32_t n_depth;
-
     int32_t data_type;    //data storage type
     void* data;           //pointer for raw data
 };
