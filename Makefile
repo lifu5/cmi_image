@@ -17,11 +17,11 @@ CFLAGS = -g -Wall -I${INCLUDE}
 
 # using .o file to generate
 ${BIN_TARGET}: ${objects}
-	$(CXX) $(objects) -lpthread -O2 -o $@
+	$(CXX) $(objects) -lpthread -O2 -o $@ -lm
 
 # middle file
 ${OBJ}/%.o: ${SRC}/%.c
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CFLAGS) -c $< -o $@ 
 
 ${OBJ}/%.o: ${INCLUDE}/%.c
 	$(CXX) $(CFLAGS) -c $< -o $@

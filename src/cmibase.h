@@ -46,9 +46,9 @@ struct cmi_image {
 };
 
 
-extern inline int row(struct cmi_image* f);
-extern inline int col(struct cmi_image* f);
-extern inline int depth(struct cmi_image* f);
+int row(struct cmi_image* f);
+int col(struct cmi_image* f);
+int depth(struct cmi_image* f);
 
 int pixel_num(struct cmi_image* f);
 
