@@ -29,29 +29,36 @@ extern "C"{
 #define JINT    2
 #define JFLOAT  3
 #define JDOUBLE 4
-
+//enum type may work better
 
 typedef struct{
     float xx, yy;
 }point2d;
 
+typedef struct{
+    float xx, yy, zz;
+}point3d;
 
+
+// basic structure
 struct cmi_image {
-    char *name;
-    int32_t n_row;
-    int32_t n_col;
-    int32_t n_depth;
+    char *name;              
+    int32_t n_row;        //x
+    int32_t n_col;        //y
+    int32_t n_depth;      //z
     int32_t data_type;    //data storage type
     void* data;           //pointer for raw data
 };
 
 
+// get image info
 int row(struct cmi_image* f);
 int col(struct cmi_image* f);
 int depth(struct cmi_image* f);
 
 int pixel_num(struct cmi_image* f);
 
+//construct method, similar to zeros in MATLAB
 struct cmi_image* allocimage(
     char* name,
     int32_t rr,     /* row size */
@@ -68,20 +75,20 @@ struct cmi_image* allocimage2d(
 );
 
 /* write and read func */
-
 void writerawimage(
     struct cmi_image* image,
     char* filename
 );
 // binary data
 
-struct cmi_image* readimage(
-    char* filename
-);
+struct cmi_image* readrawimage(char* filename);
 // binary data
 
+
+//release the memory
 void freeimage(struct cmi_image* g);
 
+// datatype transfer
 void doubleimage(struct cmi_image* g);
 
 void floatimage(struct cmi_image* g);
@@ -90,6 +97,7 @@ void boolimage(struct cmi_image* g);
 
 void intimage(struct cmi_image* g);
 
+// copy method
 struct cmi_image* copyimage(struct cmi_image* src);
 
 #ifdef __cplusplus
