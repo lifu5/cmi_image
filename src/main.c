@@ -46,13 +46,18 @@ int main(){
     struct cmi_image* sinogram = allocimage2d("sinogram", n_beam, n_angle, JFLOAT);
     
     //set response point
-    point2d pos = {200, 200};
+    point2d pos = {300, 200};
     int* data = img->data;
     data[(int)(pos.xx*width + pos.yy)] = 1;
+    data[(int)(pos.xx*width +1 + pos.yy)] = 2;
+    data = NULL;// discard this pointer
     
     myradon_t(img, sinogram);
     writerawimage(img, "1i.DAT");
     writerawimage(sinogram, "1r.DAT");
+
+    resetimage(sinogram);
+    
     printf("-----\n");
     freeimage(img);
     freeimage(sinogram);

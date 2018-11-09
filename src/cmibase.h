@@ -57,6 +57,7 @@ int col(struct cmi_image* f);
 int depth(struct cmi_image* f);
 
 int pixel_num(struct cmi_image* f);
+int sizeof_unit(int32_t type);
 
 //construct method, similar to zeros in MATLAB
 struct cmi_image* allocimage(
@@ -96,6 +97,11 @@ void floatimage(struct cmi_image* g);
 void boolimage(struct cmi_image* g);
 
 void intimage(struct cmi_image* g);
+
+//data operation
+void resetimage(struct cmi_image* g);  //set all values to 0
+
+
 
 // copy method
 struct cmi_image* copyimage(struct cmi_image* src);

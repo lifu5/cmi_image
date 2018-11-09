@@ -228,3 +228,22 @@ void floatimage(struct cmi_image* g){
     g->data = NULL;
     g->data = buffer;
 }
+
+int sizeof_unit(int32_t type){
+    if (JBOOL ==  type) return sizeof(_Bool);
+    else if (JINT == type) return sizeof(int);
+    else if (JFLOAT == type) return sizeof(float);
+    else if (JDOUBLE == type) return sizeof(double);
+    else{
+        fprintf(stderr, "bad data type");
+        return -1;
+    }
+}
+
+void resetimage(struct cmi_image* g){
+    int N = pixel_num(g);
+    int size_u = sizeof_unit(g->data_type);
+
+    memset(g->data, 0, N*size_u);
+}   
+
