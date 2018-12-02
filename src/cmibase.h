@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include "cmiutils.h"
 //#include <linux/cdev.h>
 #ifndef  _BASE_H
 #define _BASE_H
@@ -31,13 +32,6 @@ extern "C"{
 #define JDOUBLE 4
 //enum type may work better
 
-typedef struct{
-    float xx, yy;
-}point2d;
-
-typedef struct{
-    float xx, yy, zz;
-}point3d;
 
 
 // basic structure
@@ -49,7 +43,6 @@ struct cmi_image {
     int32_t data_type;    //data storage type
     void* data;           //pointer for raw data
 };
-
 
 // get image info
 int row(struct cmi_image* f);

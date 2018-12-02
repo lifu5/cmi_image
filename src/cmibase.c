@@ -46,13 +46,13 @@ struct cmi_image* allocimage(
 
     output = (struct cmi_image*) malloc(sizeof(struct cmi_image));
     if (output == NULL){
-        fprintf(stderr,"malloc failed");
+        fprintf(stderr,"malloc failed\n");
         return NULL;
     }
 
     output->data = (void *)calloc(1, N*d_size);
     if (output->data == NULL){
-        fprintf(stderr, "calloc failed");
+        fprintf(stderr, "calloc failed\n");
         return NULL;
     }
     if (name != NULL){
@@ -105,28 +105,28 @@ void writerawimage(struct cmi_image* image, char* filename){
     if (image->data_type == JBOOL){
         wrt = fwrite((_Bool*)image->data, sizeof(_Bool), N, fd);
         if (wrt != N){
-            fprintf(stderr, "write error!");
+            fprintf(stderr, "write error!\n");
             exit(0);
         }
     }
     if (image->data_type == JINT){
         wrt = fwrite((int*)image->data, sizeof(int), N, fd);
         if (wrt != N){
-            fprintf(stderr, "write error!");
+            fprintf(stderr, "write error!\n");
             exit(0);
         }
     }
     if (image->data_type == JFLOAT){
         wrt = fwrite((float*)image->data, sizeof(float), N, fd);
         if (wrt != N){
-            fprintf(stderr, "write error!");
+            fprintf(stderr, "write error!\n");
             exit(0);
         }
     }
     if (image->data_type == JDOUBLE){
         wrt = fwrite((double*)image->data, sizeof(double), N, fd);
         if (wrt != N){
-            fprintf(stderr, "write error!");
+            fprintf(stderr, "write error!\n");
             exit(0);
         }
     }
@@ -144,7 +144,7 @@ struct cmi_image* copyimage(struct cmi_image* src){
     int N = row * col * dpt;
     dst = allocimage(NULL, row, col, dpt, dt);
     if (dst == NULL){
-        fprintf(stderr, "allocate image failed");
+        fprintf(stderr, "allocate image failed\n");
         return NULL;
     }
 
@@ -154,7 +154,7 @@ struct cmi_image* copyimage(struct cmi_image* src){
         case JFLOAT: memcpy(src->data, dst->data, (N*sizeof(float))); break;
         case JDOUBLE: memcpy(src->data, dst->data, (N*sizeof(double))); break;
         default:
-            fprintf(stderr, "bad data type");
+            fprintf(stderr, "bad data type\n");
             return NULL;
     }
 
@@ -187,7 +187,7 @@ void doubleimage(struct cmi_image* g){
     }
     else if (JDOUBLE == g->data_type) return;
     else{
-        fprintf(stderr, "bad data type");
+        fprintf(stderr, "bad data type\n");
         return;
     }
     g->data_type = JDOUBLE;
@@ -220,7 +220,7 @@ void floatimage(struct cmi_image* g){
         for (int i = 0; i < N; i++) FL[i] = (float)data_ptr[i];
     }
     else{
-        fprintf(stderr, "bad data type");
+        fprintf(stderr, "bad data type\n");
         return;
     }
     g->data_type = JFLOAT;
@@ -235,7 +235,7 @@ int sizeof_unit(int32_t type){
     else if (JFLOAT == type) return sizeof(float);
     else if (JDOUBLE == type) return sizeof(double);
     else{
-        fprintf(stderr, "bad data type");
+        fprintf(stderr, "bad data type\n");
         return -1;
     }
 }
