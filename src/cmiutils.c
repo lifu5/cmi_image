@@ -37,20 +37,24 @@ mynode* initnode(double dist, point2d coord){
 
 void listinsert(cmilist* list, mynode* newnode){
     if (0 == list->len){
-        list->head  = newnode;
+        list->head= newnode;
         list->tail = newnode;
+        list->tail->next = NULL;
         list->len = 1;
         return;
     }
+    else{
     list->tail->next = newnode;
     list->tail = list->tail->next;
+    list->tail->next = NULL;
     list->len++;
+    }
 }
 
 void listsort(cmilist* list){
     //bubble sort
     mynode *p,*q;
-    float tmp_d;
+    double tmp_d;
     point2d tmp_p;
     for (p = list->head; p!=NULL; p = p->next){
         for (q = p->next; q!=NULL; q = q->next){
