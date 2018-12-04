@@ -21,29 +21,46 @@ typedef struct point3d point3d;
 
 int get_filesize(char* filename);
 
-struct mynode{
+struct coord_dist_node{
     double dist;
     point2d coord;
-    struct mynode* next;
+    struct coord_dist_node* next;
 };
 
-typedef struct mynode mynode;
-mynode* initnode(double dist, point2d coord);
+typedef struct coord_dist_node cd_node;
 
 
-struct cmilist{
-    mynode* head;
+struct cd_nodelist{
+    cd_node* head;
     //mynode* curr;
-    mynode* tail;
+    cd_node* tail;
     int len;
 };
-typedef struct cmilist cmilist;
 
-cmilist* initlist(mynode*);
-// provide limit function
-void listinsert(cmilist* list, mynode* newnode);
+struct int_node{
+    int val;
+    struct int_node* next;
+};
+typedef struct int_node int_node; 
 
-void listsort(cmilist* list);  
+struct int_nodelist{
+    int_node* head;
+    int_node* tail;
+    int len;   
+};
+typedef struct int_nodelist int_nodelist;
+typedef struct cd_nodelist cd_nodelist;
+
+cd_nodelist* initlist(cd_node*);
+
+
+// only provide limit function for list structure
+cd_node* initnode(double dist, point2d coord);
+int_node* intnode(int val);
+void listinsert_int(int_nodelist* list, int_node* newnode);
+void listinsert(cd_nodelist* list, cd_node* newnode);
+
+void listsort(cd_nodelist* list);  
 
 //map part is underconstucted
 struct map{

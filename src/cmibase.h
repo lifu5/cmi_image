@@ -30,8 +30,20 @@ extern "C"{
 #define JINT    2
 #define JFLOAT  3
 #define JDOUBLE 4
-//enum type may work better
+//TODO use enum type for instead 
 
+
+
+struct geom_paras{
+    int width;
+    int height;
+    int n_bin2;
+    int n_angle;
+    double interv;
+    double Lb;
+};
+
+typedef struct geom_paras geom_paras;
 
 
 // basic structure

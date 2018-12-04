@@ -71,7 +71,7 @@ void get_matrix_A(
     int M =n_bin2*n_angle;
     int N = width*height;
     //printf("%f\n",d_m);
-    cmilist* distlist = (cmilist*)malloc(sizeof(cmilist)*M);
+    cd_nodelist* distlist = (cd_nodelist*)malloc(sizeof(cd_nodelist)*M);
     for (int i = 0; i < M; i++)
         distlist[i].len = 0;
 
@@ -88,7 +88,7 @@ void get_matrix_A(
                     if (n_bin2 == index_m)  index_m = n_bin2-1;
                     //printf("%d\n", index_m);
                     point2d point = {x,y};
-                    mynode* newnode = initnode(dist2, point);
+                    cd_node* newnode = initnode(dist2, point);
                     //printf("%d,%d,%d\n", j*n_bin2+index_m,M, index_m);
                     //printf("%f\n", newnode->dist);
                     listinsert(&distlist[j*n_bin2+index_m], newnode);
@@ -116,7 +116,7 @@ void get_matrix_A(
         //printf("%f\n",ratio);
         for (int j = 0; j<n_bin2; j++){
             double _summ = 0;
-            for (mynode* p = distlist[i*n_bin2+j].head; p!=NULL; p = p->next){
+            for (cd_node* p = distlist[i*n_bin2+j].head; p!=NULL; p = p->next){
                 int xx = (int)p->coord.xx;
                 int yy = (int)p->coord.yy;
                 FTdata_A[(i*n_bin2+j)*N + (xx*height+yy)] = exp(-_summ);
@@ -152,13 +152,56 @@ void get_system_H(
                 if (dist1>=-0.5 && dist1<=0.5){ // whether in FOV
                     int index_m = (int)((dist1+0.5)/d_m);//FIXME: only for even n_bin2
                     FTdataH[(j*n_bin2+index_m)*N + x*height +y] =
-                    FTdataA[(j*n_bin2+index_m)*N + x*height +y];
-                    
+                    FTdataA[(j*n_bin2+index_m)*N + x*height +y];                   
                 }
             }
         }
     }
+}
 
+void assign_grid(
+        int_nodelist* grid_assign,
+        geom_paras paras,
+        int Ngird){
+    
+    
+    int n_angle = paras.n_angle;
+    int n_bin = paras.n_bin2;
+    int width = paras.width;
+    int height = paras.height;
+    
+    double d_bin = 1/n_bin;
+    double Lb = paras.Lb;
+    double interv = paras.interv;
+    double offsetx = 0.5/width;
+    double offsety = 0.5/height;
+    
+
+    for (int i = 0; i<n_angle; i++){
+        double theta = M_PI*i/n_angle;
+        for (int x = 0; x<width-1; x++){
+            double xx = img2phy_coorx(x, width)+offsetx;
+            for (int y = 0; y<height-1; y++){
+                double yy = img2phy_coory(y, height) + offsety;
+                double dist1 = xx*cos(theta) + yy*sin(theta);
+                double dist2 = xx*sin(theta) + yy*cos(theta) + 0.5;
+                if (dist1>=-0.5 && dist1<=0.5){ //in FOV
+                    int index_m = (int)((dist1+0.5)/d_bin);
+                    double tempd = n_bin*(dist2+interv+Lb)/Lb;
+                    int nofcolli =(int)((tempd/d_bin) -1);
+                    for (int m = index_m - nofcolli;
+                         m<=index_m + nofcolli; m++){
+                        if (m>=0 && m<n_bin){
+                           int_node*p = intnode(m);
+                           listinsert_int(grid_assign, p);
+                        }
+                    }
+
+                }
+                
+            }
+        }
+    }
 }
 
 
@@ -166,7 +209,8 @@ void get_system_H(
 void compute_system_mat(
     struct cmi_image* img,
     struct cmi_image* atten,
-    struct cmi_image* sinog){
+    struct cmi_image* sinog,
+    geom_paras paras){
     
     printf("run compute system func\n");
     int width = row(img);
@@ -177,7 +221,14 @@ void compute_system_mat(
     int n_bin2  = row(sinog);
     int N = width*height;
     int M = n_bin2*n_angle;
-
+    int Ngrid  =(width-1)*(height-1);
+    
+    // assign point on grid belong to which collimator m
+    int_nodelist* grid_assign = (int_nodelist*)malloc(sizeof(int_nodelist)*Ngrid*n_angle);
+    for (int i = 0; i<Ngrid*n_angle; i++)
+        grid_assign[i].len = 0;
+    assign_grid(grid_assign, paras, Ngrid);
+    printf("creat image matirx\n");   
     struct cmi_image* matrix_A = allocimage2d("sysA", M ,N, JFLOAT);
     struct cmi_image* sys_H = allocimage2d("sysH", M, N , JFLOAT);
     get_matrix_A(atten, matrix_A, n_bin2, n_angle);
@@ -189,30 +240,37 @@ void compute_system_mat(
 }
 
 
+
+
 int main(){
     printf("hello\n");
     //int size = sizeof(void);
     //printf("%d\n", size);
     
-    //set the parameters
-    int n_bin1 = 100;
-    int n_angle = 120;
+    geom_paras paras;
+    //set the geometry parameters
+    
+    paras.n_bin2 = 100;
+    paras.n_angle = 120;
+    
+    paras.width = 144;
+    paras.height = 144;
 
-    int width = 128;
-    int height = 128;
+    paras.interv = 0.25;
+    paras.Lb = 0.25;
     
     // create two new images
-    struct cmi_image* img = allocimage2d("image" , width, height, JINT);
-    struct cmi_image* sinogram = allocimage2d("sinogram", n_bin1, n_angle, JFLOAT);
-    struct cmi_image* atten = allocimage2d("mask", width, height, JFLOAT);
+    struct cmi_image* img = allocimage2d("image" , paras.width, paras.height, JINT);
+    struct cmi_image* sinogram = allocimage2d("sinogram", paras.n_bin2, paras.n_angle, JFLOAT);
+    struct cmi_image* atten = allocimage2d("atten", paras.width, paras.height, JFLOAT);
     get_mask(atten);
     //set response point
-    point2d pos = {300, 200};
-    int* data = img->data;
-    data[(int)(pos.xx*width + pos.yy)] = 1;
-    data[(int)(pos.xx*width +1 + pos.yy)] = 2;
-    data = NULL;// discard this pointer
-    compute_system_mat(img, atten, sinogram);   
+    //point2d pos = {300, 200};
+    //int* data = img->data;
+    //data[(int)(pos.xx*width + pos.yy)] = 1;
+    //data[(int)(pos.xx*width +1 + pos.yy)] = 2;
+    //data = NULL;// discard this pointer
+    compute_system_mat(img, atten, sinogram, paras);   
     
     //myradon_t(img, sinogram);
     //writerawimage(img, "1i.DAT");

@@ -5,7 +5,7 @@ int get_filesize(char* filename){
     FILE* fp =fopen("filename", "rb");
     int size;
     if(fp == NULL){ //open files failed 
-        perror("can not open the file");
+        perror("can not open the file\n");
         return -1;
     }
     fseek(fp, 0, SEEK_END);
@@ -14,10 +14,9 @@ int get_filesize(char* filename){
     return size;
 }
 
-
-cmilist* initlist(mynode *node){
-    cmilist* p;
-    p = (cmilist*)malloc(sizeof(cmilist));
+cd_nodelist* initlist(cd_node *node){
+    cd_nodelist* p;
+    p = (cd_nodelist*)malloc(sizeof(cd_nodelist));
     p->head = node;
     p->tail = node;
     p->tail->next = NULL;
@@ -25,9 +24,9 @@ cmilist* initlist(mynode *node){
     return p;
 }
 
-mynode* initnode(double dist, point2d coord){
-    mynode* p;
-    p = (mynode*)malloc(sizeof(mynode));
+cd_node* initnode(double dist, point2d coord){
+    cd_node* p;
+    p = (cd_node*)malloc(sizeof(cd_node));
     p->dist = dist;
     p->coord = coord;
     p->next = NULL;
@@ -35,7 +34,15 @@ mynode* initnode(double dist, point2d coord){
 }
 
 
-void listinsert(cmilist* list, mynode* newnode){
+int_node* intnode(int val){
+    int_node* p;
+    p = (int_node*)malloc(sizeof(int_node));
+    p->val = val;
+    p->next = NULL;
+    return p;
+}
+
+void listinsert_int(int_nodelist* list, int_node* newnode){
     if (0 == list->len){
         list->head= newnode;
         list->tail = newnode;
@@ -51,9 +58,26 @@ void listinsert(cmilist* list, mynode* newnode){
     }
 }
 
-void listsort(cmilist* list){
+
+void listinsert(cd_nodelist* list, cd_node* newnode){
+    if (0 == list->len){
+        list->head= newnode;
+        list->tail = newnode;
+        list->tail->next = NULL;
+        list->len = 1;
+        return;
+    }
+    else{
+    list->tail->next = newnode;
+    list->tail = list->tail->next;
+    list->tail->next = NULL;
+    list->len++;
+    }
+}
+
+void listsort(cd_nodelist* list){
     //bubble sort
-    mynode *p,*q;
+    cd_node *p,*q;
     double tmp_d;
     point2d tmp_p;
     for (p = list->head; p!=NULL; p = p->next){
