@@ -43,12 +43,14 @@ struct int_node{
 };
 typedef struct int_node int_node; 
 
-struct int_nodelist{
+struct grid_info{
     int_node* head;
     int_node* tail;
-    int len;   
+    int index_m; //parallel
+    double dist1; //projection on detect plane
+    int len;
 };
-typedef struct int_nodelist int_nodelist;
+typedef struct grid_info grid_info;
 typedef struct cd_nodelist cd_nodelist;
 
 cd_nodelist* initlist(cd_node*);
@@ -57,7 +59,7 @@ cd_nodelist* initlist(cd_node*);
 // only provide limit function for list structure
 cd_node* initnode(double dist, point2d coord);
 int_node* intnode(int val);
-void listinsert_int(int_nodelist* list, int_node* newnode);
+void grid_node_insert(grid_info* list, int_node* newnode);
 void listinsert(cd_nodelist* list, cd_node* newnode);
 
 void listsort(cd_nodelist* list);  

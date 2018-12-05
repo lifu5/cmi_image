@@ -4,8 +4,7 @@
 
 float img2phy_coorx(int x, int width){
     float dx = 1./width;
-    return (x+0.5)*dx - 0.5;
-    
+    return (x+0.5)*dx - 0.5;    
 }
 
 float img2phy_coory(int y, int height){
@@ -59,19 +58,130 @@ void get_mask(struct cmi_image* mask){
 //using delta basis function to support continuous space
 //set u_tot as a constant at frist
 
+
+
+double calcu_weight_parallel(
+        grid_info* grid_points,
+        int idx[], int mm,
+        double theta,
+        double d_bin,
+        double pixel_area){
+
+    int m[4];
+    int ct_less=0,ct_equ=0,ct_more=0;
+    int equ[3] = {-1,-1,-1};// record equ index
+    for(int i=0; i<4; i++)
+        m[i] = grid_points[idx[i]].index_m;
+    if (m[0]==m[1] &&m[1]==m[2] &&m[2]==m[3] &&m[3]==mm) return pixel_area;
+    for (int i=0; i<4; i++){
+        if (m[i]<mm) ct_less++;
+        else if (m[i]==mm) equ[ct_equ++] =idx[i];
+        else ct_more++;
+    }
+    double area = 0;
+    if (1==ct_equ){   
+        double dist_m = grid_points[idx[0]].dist1; 
+        if (ct_less==0){//boundary mm and mm+1
+            double bdline = (mm+1)*d_bin-0.5;
+            //if (sin(theta)==0 || cos(theta)==0) continue;
+            area = cmi_sqr(dist_m - bdline)/sin(theta)/cos(theta);
+        }
+        else if (ct_more==0){//boundary mm-1 and mm
+            double bdline = mm*d_bin-0.5;
+            //if (sin(theta)==0 || cos(theta)==0) continue;
+             area = cmi_sqr(dist_m - bdline)/sin(theta)/cos(theta);
+        }else{
+            area = 1-calcu_weight_parallel(grid_points, idx, mm-1,theta,d_bin, pixel_area)-\
+                   calcu_weight_parallel(grid_points, idx,mm+1,theta,d_bin, pixel_area);
+            //FIXME: repeated computational cost
+        }
+    }
+    else if (2==ct_equ){
+        double dist_m1 = grid_points[idx[0]].dist1;
+        double dist_m2 = grid_points[idx[1]].dist1;
+        if(ct_less ==0){// boundary line: mm and m+1
+            double bdline = (mm+1)*d_bin-0.5;
+            area = cmi_sqr(dist_m1 - bdline) - cmi_sqr(dist_m2 -bdline);
+            area = cmi_abs(area)/sin(theta)/cos(theta);
+        }
+        else if (ct_more == 0){ //boundary line: mm-1 and mm
+            double bdline  = mm*d_bin - 0.5;
+            area = cmi_sqr(dist_m1 - bdline) - cmi_sqr(dist_m2 -bdline);
+            area = cmi_abs(area)/sin(theta)/cos(theta);
+        }else{
+            area = 1 - calcu_weight_parallel(grid_points, idx, mm-1,theta,d_bin, pixel_area)-\
+                   calcu_weight_parallel(grid_points, idx,mm+1,theta,d_bin, pixel_area);
+            //FIXME: repeated computational cost
+        }
+    }
+    else if (3==ct_equ){
+        if (ct_less == 0){
+            area = 1 - calcu_weight_parallel(grid_points, idx, mm+1, theta, d_bin, pixel_area);
+        }
+        else if (ct_more == 0){
+            area = 1 - calcu_weight_parallel(grid_points, idx, mm-1, theta, d_bin, pixel_area); 
+        }   
+    }
+    else{
+        fprintf(stderr,"exceptional case");
+        area = 0;
+    }
+    return area;
+}
+
 void get_matrix_A(
     struct cmi_image* atten,
     struct cmi_image* matrix_A,
+    grid_info* grid_points,
     int n_bin2,
     int n_angle){
     
     int width = row(atten);
     int height = col(atten);
     double d_m = 1./n_bin2;
+    double pixel_area = 1./width/height;
     int M =n_bin2*n_angle;
     int N = width*height;
+    int Ngrid = (width-1)*(height-1);
+    printf("---\n");
+    for (int j = 0; j<n_angle; j++){ //loop from 0 to pi
+        double theta = M_PI*j/(double)n_angle;
+        for (int x =1; x<width-1; x++){ //don't consider the outer layer pixel
+            double xx = img2phy_coorx(x, width);
+            for (int y = 1; y<height-1; y++){
+                double yy= img2phy_coory(y, height);
+                double dist2 = xx*sin(theta)* yy*cos(theta)+0.5;
+                int idx[4]; // four corners 
+                idx[0] = j*Ngrid + (x-1)*(height-1) +y-1;
+                idx[1] = j*Ngrid + (x-1)*(height-1) +y;
+                idx[2] = j*Ngrid + x*(height-1) +y-1;
+                idx[3] = j*Ngrid + x*(height-1) +y;
+                //printf("%d,%d\n", grid_points[idx1].len, idx1);
+                if (grid_points[idx[0]].len!=0 &&
+                    grid_points[idx[1]].len!=0 &&
+                    grid_points[idx[2]].len!=0 &&
+                    grid_points[idx[3]].len!=0){
+                        int m1,m2,m3,m4;
+                        m1 = grid_points[idx[0]].index_m;
+                        m2 = grid_points[idx[1]].index_m;
+                        m3 = grid_points[idx[2]].index_m;
+                        m4 = grid_points[idx[3]].index_m;
+                        int min_m = cmi_min(cmi_min(m1,m2), cmi_min(m3,m4));
+                        int max_m = cmi_max(cmi_max(m1,m2), cmi_max(m3,m4));
+                        //printf("%d\n",max_m-min_m+1);
+                        for (int mm = min_m; mm<=max_m; mm++){
+                            double weight=\
+                            calcu_weight_parallel(grid_points,\
+                            idx, mm, theta, d_m, pixel_area);
+                        }
+                }
+
+            }
+        }
+    }
     //printf("%f\n",d_m);
-    cd_nodelist* distlist = (cd_nodelist*)malloc(sizeof(cd_nodelist)*M);
+    /* obsolete code
+     cd_nodelist* distlist = (cd_nodelist*)malloc(sizeof(cd_nodelist)*M);
     for (int i = 0; i < M; i++)
         distlist[i].len = 0;
 
@@ -96,6 +206,7 @@ void get_matrix_A(
             }
         }
     }
+    
     for (int i =0; i<M; i++){
         listsort(&distlist[i]);
         //for (int j=0; j<n_angle; j++){
@@ -123,7 +234,7 @@ void get_matrix_A(
                 _summ += FTdata[xx*height+yy]*ratio2;
         }
     }
-    }
+    }*/
 }
 
 
@@ -160,22 +271,20 @@ void get_system_H(
 }
 
 void assign_grid(
-        int_nodelist* grid_assign,
+        grid_info* grid_points,
         geom_paras paras,
-        int Ngird){
-    
-    
+        int Ngrid){
+       
     int n_angle = paras.n_angle;
     int n_bin = paras.n_bin2;
     int width = paras.width;
     int height = paras.height;
     
-    double d_bin = 1/n_bin;
+    double d_bin = 1./n_bin;
     double Lb = paras.Lb;
     double interv = paras.interv;
     double offsetx = 0.5/width;
     double offsety = 0.5/height;
-    
 
     for (int i = 0; i<n_angle; i++){
         double theta = M_PI*i/n_angle;
@@ -183,27 +292,34 @@ void assign_grid(
             double xx = img2phy_coorx(x, width)+offsetx;
             for (int y = 0; y<height-1; y++){
                 double yy = img2phy_coory(y, height) + offsety;
+                if (cmi_sqr(xx) + cmi_sqr(yy)>0.25) continue; // in FOV
                 double dist1 = xx*cos(theta) + yy*sin(theta);
                 double dist2 = xx*sin(theta) + yy*cos(theta) + 0.5;
-                if (dist1>=-0.5 && dist1<=0.5){ //in FOV
+                if (dist1>=-0.5 && dist1<=0.5){ 
                     int index_m = (int)((dist1+0.5)/d_bin);
-                    double tempd = n_bin*(dist2+interv+Lb)/Lb;
+                    int temp_idx = i*Ngrid + x*(height-1) +y;
+                    grid_points[temp_idx].index_m = index_m;
+                    grid_points[temp_idx].dist1 = dist1;
+                    double tempd = d_bin*(dist2+interv+Lb)/Lb;
                     int nofcolli =(int)((tempd/d_bin) -1);
+ //                   printf("%d\n", nofcolli);
                     for (int m = index_m - nofcolli;
                          m<=index_m + nofcolli; m++){
                         if (m>=0 && m<n_bin){
                            int_node*p = intnode(m);
-                           listinsert_int(grid_assign, p);
+                           grid_node_insert(
+                            &grid_points[temp_idx],p);
                         }
                     }
-
                 }
-                
             }
         }
     }
+    for (int i = 0; i<width-1; i++)
+        for (int j = 0; j<height-1; j++){
+            printf("%d,%d,%d\n",grid_points[i*(height-1)+j].len,i,j);          
+        }
 }
-
 
 
 void compute_system_mat(
@@ -224,14 +340,14 @@ void compute_system_mat(
     int Ngrid  =(width-1)*(height-1);
     
     // assign point on grid belong to which collimator m
-    int_nodelist* grid_assign = (int_nodelist*)malloc(sizeof(int_nodelist)*Ngrid*n_angle);
+    grid_info* grid_points = (grid_info*)malloc(sizeof(grid_info)*Ngrid*n_angle);
     for (int i = 0; i<Ngrid*n_angle; i++)
-        grid_assign[i].len = 0;
-    assign_grid(grid_assign, paras, Ngrid);
+        grid_points[i].len = 0;
+    assign_grid(grid_points, paras, Ngrid);
     printf("creat image matirx\n");   
     struct cmi_image* matrix_A = allocimage2d("sysA", M ,N, JFLOAT);
     struct cmi_image* sys_H = allocimage2d("sysH", M, N , JFLOAT);
-    get_matrix_A(atten, matrix_A, n_bin2, n_angle);
+    get_matrix_A(atten, matrix_A, grid_points, n_bin2, n_angle);
     printf("get matrix A\n");
     //get_system_H(matrix_A, sys_H, n_angle, n_bin2, width, height); 
     writerawimage(matrix_A, "H.DAT");
@@ -256,8 +372,8 @@ int main(){
     paras.width = 144;
     paras.height = 144;
 
-    paras.interv = 0.25;
-    paras.Lb = 0.25;
+    paras.interv = 0.1;
+    paras.Lb = 0.4;
     
     // create two new images
     struct cmi_image* img = allocimage2d("image" , paras.width, paras.height, JINT);

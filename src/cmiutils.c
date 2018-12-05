@@ -42,19 +42,19 @@ int_node* intnode(int val){
     return p;
 }
 
-void listinsert_int(int_nodelist* list, int_node* newnode){
-    if (0 == list->len){
-        list->head= newnode;
-        list->tail = newnode;
-        list->tail->next = NULL;
-        list->len = 1;
+void grid_node_insert(grid_info* gridp, int_node* newnode){
+    if (0 == gridp->len){
+        gridp->head= newnode;
+        gridp->tail = newnode;
+        gridp->tail->next = NULL;
+        gridp->len = 1;
         return;
     }
     else{
-    list->tail->next = newnode;
-    list->tail = list->tail->next;
-    list->tail->next = NULL;
-    list->len++;
+    gridp->tail->next = newnode;
+    gridp->tail = gridp->tail->next;
+    gridp->tail->next = NULL;
+    gridp->len++;
     }
 }
 
