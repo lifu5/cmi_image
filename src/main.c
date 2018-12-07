@@ -80,36 +80,51 @@ double calcu_weight_parallel(
     }
     double area = 0;
     if (1==ct_equ){   
-        double dist_m = grid_points[idx[0]].dist1; 
+        double dist_m = grid_points[equ[0]].dist1;
+        //printf("%lf,%lf,%lf", dist_m, mm)
         if (ct_less==0){//boundary mm and mm+1
             double bdline = (mm+1)*d_bin-0.5;
             //if (sin(theta)==0 || cos(theta)==0) continue;
-            area = cmi_sqr(dist_m - bdline)/sin(theta)/cos(theta);
+            area = cmi_sqr(dist_m - bdline)/sin(theta)/cos(theta)/2;
+            return cmi_abs(area);
         }
         else if (ct_more==0){//boundary mm-1 and mm
             double bdline = mm*d_bin-0.5;
             //if (sin(theta)==0 || cos(theta)==0) continue;
-             area = cmi_sqr(dist_m - bdline)/sin(theta)/cos(theta);
+             area = cmi_sqr(dist_m - bdline)/sin(theta)/cos(theta)/2;
+             printf("%f,%f\n",area,pixel_area);
+             return cmi_abs(area);
         }else{
-            area = 1-calcu_weight_parallel(grid_points, idx, mm-1,theta,d_bin, pixel_area)-\
+            area = pixel_area - calcu_weight_parallel(grid_points, idx, mm-1,theta,d_bin, pixel_area)-\
                    calcu_weight_parallel(grid_points, idx,mm+1,theta,d_bin, pixel_area);
             //FIXME: repeated computational cost
+            return cmi_abs(area);
         }
     }
-    else if (2==ct_equ){
-        double dist_m1 = grid_points[idx[0]].dist1;
-        double dist_m2 = grid_points[idx[1]].dist1;
+    else if (2==ct_equ){   
+        double dist_m1 = grid_points[equ[0]].dist1;
+        double dist_m2 = grid_points[equ[1]].dist1;
         if(ct_less ==0){// boundary line: mm and m+1
             double bdline = (mm+1)*d_bin-0.5;
-            area = cmi_sqr(dist_m1 - bdline) - cmi_sqr(dist_m2 -bdline);
-            area = cmi_abs(area)/sin(theta)/cos(theta);
+            if (theta == 0 || cmi_abs(theta-M_PI/2.)<0.02){
+                area = cmi_abs(dist_m1 - bdline)*sqrt(pixel_area);
+            }//special case
+            else{
+                area = cmi_sqr(dist_m1 - bdline) - cmi_sqr(dist_m2 -bdline);
+                area = cmi_abs(area)/sin(theta)/cos(theta)/2;
+            }
         }
         else if (ct_more == 0){ //boundary line: mm-1 and mm
             double bdline  = mm*d_bin - 0.5;
-            area = cmi_sqr(dist_m1 - bdline) - cmi_sqr(dist_m2 -bdline);
-            area = cmi_abs(area)/sin(theta)/cos(theta);
+            if (theta == 0 || cmi_abs(theta-M_PI/2.)<0.02){
+                area = cmi_abs(dist_m1 - bdline)*sqrt(pixel_area);
+            }//special case
+            else{
+                area = cmi_sqr(dist_m1 - bdline) - cmi_sqr(dist_m2 -bdline);
+                area = cmi_abs(area)/sin(theta)/cos(theta)/2;
+            }
         }else{
-            area = 1 - calcu_weight_parallel(grid_points, idx, mm-1,theta,d_bin, pixel_area)-\
+            area = pixel_area - calcu_weight_parallel(grid_points, idx, mm-1,theta,d_bin, pixel_area)-\
                    calcu_weight_parallel(grid_points, idx,mm+1,theta,d_bin, pixel_area);
             //FIXME: repeated computational cost
         }
@@ -124,9 +139,9 @@ double calcu_weight_parallel(
     }
     else{
         fprintf(stderr,"exceptional case");
-        area = 0;
+        area = 1/2*pixel_area;
     }
-    return area;
+    return cmi_abs(area);
 }
 
 void get_matrix_A(
@@ -139,11 +154,15 @@ void get_matrix_A(
     int width = row(atten);
     int height = col(atten);
     double d_m = 1./n_bin2;
-    double pixel_area = 1./width/height;
-    int M =n_bin2*n_angle;
     int N = width*height;
+    int M =n_bin2*n_angle;
+    double pixel_area = 1./N;
     int Ngrid = (width-1)*(height-1);
+    
     printf("---\n");
+    
+    cd_nodelist* pdistlist = (cd_nodelist*)malloc(sizeof(cd_nodelist)*M);
+    for (int i =0; i<M; i++) pdistlist[i].len = 0;
     for (int j = 0; j<n_angle; j++){ //loop from 0 to pi
         double theta = M_PI*j/(double)n_angle;
         for (int x =1; x<width-1; x++){ //don't consider the outer layer pixel
@@ -173,9 +192,30 @@ void get_matrix_A(
                             double weight=\
                             calcu_weight_parallel(grid_points,\
                             idx, mm, theta, d_m, pixel_area);
+                            point2d point = {x,y};
+                            cd_node* newnode = initnode(dist2,point, weight);
+                            listinsert(&pdistlist[j*n_bin2+mm], newnode);
                         }
                 }
+            }
+        }
+    }
+    for (int i =0; i<M; i++){
+        listsort(&pdistlist[i]);
+    }
 
+    float* FTdata = atten->data;
+    float* FTdata_A = matrix_A->data;
+    for (int i = 0; i<n_angle; i++){
+        //double theta = M_PI*i/n_angle;
+        for (int j = 0; j<n_bin2; j++){
+            double _summ = 0;
+            for (cd_node* p = pdistlist[i*n_bin2+j].head; p!=NULL; p = p->next){
+                int xx = (int)p->coord.xx;
+                int yy = (int)p->coord.yy;
+                //printf("%f\n",p->weight);
+                FTdata_A[(i*n_bin2+j)*N + (xx*height+yy)] = exp(-_summ);
+                _summ += FTdata[xx*height+yy]*(p->weight);
             }
         }
     }
@@ -315,10 +355,10 @@ void assign_grid(
             }
         }
     }
-    for (int i = 0; i<width-1; i++)
-        for (int j = 0; j<height-1; j++){
-            printf("%d,%d,%d\n",grid_points[i*(height-1)+j].len,i,j);          
-        }
+    //for (int i = 0; i<width-1; i++)
+    //    for (int j = 0; j<height-1; j++){
+    //        printf("%d,%d,%d\n",grid_points[i*(height-1)+j].len,i,j);          
+    //    }
 }
 
 
@@ -369,8 +409,8 @@ int main(){
     paras.n_bin2 = 100;
     paras.n_angle = 120;
     
-    paras.width = 144;
-    paras.height = 144;
+    paras.width = 128;
+    paras.height = 128;
 
     paras.interv = 0.1;
     paras.Lb = 0.4;

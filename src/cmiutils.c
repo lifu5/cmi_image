@@ -24,10 +24,11 @@ cd_nodelist* initlist(cd_node *node){
     return p;
 }
 
-cd_node* initnode(double dist, point2d coord){
+cd_node* initnode(double dist, point2d coord, double weight){
     cd_node* p;
     p = (cd_node*)malloc(sizeof(cd_node));
     p->dist = dist;
+    p->weight = weight;
     p->coord = coord;
     p->next = NULL;
     return p;

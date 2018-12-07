@@ -24,6 +24,7 @@ int get_filesize(char* filename);
 struct coord_dist_node{
     double dist;
     point2d coord;
+    double weight;
     struct coord_dist_node* next;
 };
 
@@ -57,7 +58,7 @@ cd_nodelist* initlist(cd_node*);
 
 
 // only provide limit function for list structure
-cd_node* initnode(double dist, point2d coord);
+cd_node* initnode(double dist, point2d coord, double weight);
 int_node* intnode(int val);
 void grid_node_insert(grid_info* list, int_node* newnode);
 void listinsert(cd_nodelist* list, cd_node* newnode);
