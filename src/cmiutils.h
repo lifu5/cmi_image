@@ -47,7 +47,7 @@ typedef struct int_node int_node;
 struct grid_info{
     int_node* head;
     int_node* tail;
-    int index_m; //parallel
+    int index_m; //parallel beam
     double dist1; //projection on detect plane
     int len;
 };
