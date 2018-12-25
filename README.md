@@ -1,2 +1,8 @@
-# cmi_image
-a light and fast lib dealing with matrix and image
+# SPECT system matrix with attenuation
+## part 1 basic functions
+
+basic structure
+ - cmi_image : 
+ - allocimage :
+ 
+ ## part 2 system matrix calculation 
