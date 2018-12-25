@@ -49,7 +49,7 @@ void get_mask(struct cmi_image* mask){
         for (int y = 0; y<height; y++){
             double temp =
             cmi_sqr((x - (width+1)/2.)/width)+cmi_sqr((y - (height+1)/2.)/height);
-            if (temp <= 1) FTdata[x*height + y] = 200;
+            if (temp <= 1) FTdata[x*height + y] = 210;
         }
     }
 }
@@ -240,8 +240,8 @@ void get_matrix_A(
                 //printf("%f\n",p->weight);
                 FTdata_A[(i*n_bin2+j)*N + (xx*height+yy)] = exp(-_summ);
                 _summ += FTdata[xx*height+yy]*(p->weight);
-                if (i==30){printf("(%d, %d, %f, %d, %f)", xx, yy, p->weight, j, p->dist); 
-                printf("  %f\n", _summ);}
+                //if (i==30){printf("(%d, %d, %f, %d, %f)", xx, yy, p->weight, j, p->dist); 
+                //printf("  %f\n", _summ);
             }
         }
     }
@@ -330,8 +330,20 @@ void get_system_H(
                 if (dist1>=-0.5 && dist1<=0.5){ // whether in FOV
                     int index_m = (int)((dist1+0.5)/d_m);//FIXME: only for even n_bin2
                     // search the weight in struct pdistlist
-                    FTdataH[(j*n_bin2+index_m)*N + x*height +y] =
-                    FTdataA[(j*n_bin2+index_m)*N + x*height +y];                   
+                    if (pdistlist[j*n_bin2+index_m].len<1)
+                        FTdataH[(j*n_bin2+index_m)*N + x*height +y] = 0;
+                    else{
+                        for (cd_node* p =pdistlist[j*n_bin2+index_m].head; p!=NULL; p = p->next){
+                            int tmpx = (int)p->coord.xx;
+                            int tmpy = (int)p->coord.yy;
+                            if (tmpx==x && tmpy == y){
+                                FTdataH[(j*n_bin2+index_m)*N + x*height +y] = p->weight*
+                                FTdataA[(j*n_bin2+index_m)*N + x*height +y];  
+                                continue;
+                            }
+                            //FTdataH[(j*n_bin2 + index_m)*N +x*height +y] = 0;
+                        }
+                    }
                 }
             }
         }
