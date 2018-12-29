@@ -20,3 +20,22 @@ basic function
  
  
  ## part 2 system matrix calculation 
+ In this code, we use strip model (overlap area) to compute the weight of pixels.
+ - Area of intersection between a strip of finite width and a pixel.
+ - Can be computed fast by pre-computing the pixel footprint.
+ 
+ the possible overplap situation can be complicated, we need discuss each pixel belong to which overlap situation.
+ 
+ the main idea of this code is firstly get each pixel's four corners belong to which strips and record it. Then use the results to compute the area of intersection. For pixels along to one ray (strip), we sort it according to its distance to the detector plane in order to compute the attenuation map easiler.
+ 
+ we seperate the whole process into two part 1. attenuation mat A 2. system mat H 
+ 
+ - compute_system_mat: 
+   basically the main function of computing system matrix process.
+ - assign_grid: 
+   pre-compute which stripe points on grid belong to for every angles.
+ - pdistlist: 
+   a link list to record all pixels along every strips.
+ - calcu_weight_parallel: 
+   according to different intersection cases to get the area of intersection between a strip and a pixel.
+ 
