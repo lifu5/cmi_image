@@ -1,6 +1,4 @@
 # SPECT system matrix with attenuation
-
-(..underconstucted)
 ## part 1 basic functions
 
 basic structure
@@ -20,7 +18,7 @@ basic function
  
  
  ## part 2 system matrix calculation 
- In this code, we use strip model (overlap area) to compute the weight of pixels.
+ In this code, we use area intersection model (AIM) to compute the weight of pixels.
  - Area of intersection between a strip of finite width and a pixel.
  - Can be computed fast by pre-computing the pixel footprint.
  
@@ -38,4 +36,11 @@ basic function
    a link list to record all pixels along every strips.
  - calcu_weight_parallel: 
    according to different intersection cases to get the area of intersection between a strip and a pixel.
+   
+   
+  **refernce**:
+  
+  【1】http://www.imm.dtu.dk/~pcha/HDtomo/Day1discretization.pdf
+  
+  【2】“Fast and accurate computation of system matrix for area integral model-based algebraic reconstruction technique”
  
